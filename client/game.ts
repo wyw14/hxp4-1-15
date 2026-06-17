@@ -14,12 +14,16 @@ class ColorMemoryGame {
   private isShowingSequence: boolean = false;
   private level: number = 0;
   private highScore: number = 0;
+  private combo: number = 0;
+  private roundPerfect: boolean = true;
 
   private readonly buttons: NodeListOf<HTMLButtonElement>;
   private readonly startBtn: HTMLButtonElement;
   private readonly currentLevelEl: HTMLElement;
   private readonly highScoreEl: HTMLElement;
   private readonly gameStatusEl: HTMLElement;
+  private readonly comboCountEl: HTMLElement;
+  private readonly comboItemEl: HTMLElement;
 
   private readonly lightOnDuration: number = 600;
   private readonly lightOffDuration: number = 300;
@@ -30,6 +34,8 @@ class ColorMemoryGame {
     this.currentLevelEl = document.getElementById('current-level') as HTMLElement;
     this.highScoreEl = document.getElementById('high-score') as HTMLElement;
     this.gameStatusEl = document.getElementById('game-status') as HTMLElement;
+    this.comboCountEl = document.getElementById('combo-count') as HTMLElement;
+    this.comboItemEl = document.querySelector('.combo-item') as HTMLElement;
 
     this.init();
   }
@@ -86,8 +92,11 @@ class ColorMemoryGame {
     this.sequence = [];
     this.playerIndex = 0;
     this.level = 0;
+    this.combo = 0;
     this.isPlaying = true;
     this.currentLevelEl.textContent = '0';
+    this.comboCountEl.textContent = '0';
+    this.comboItemEl.classList.remove('hot');
     
     this.setButtonsDisabled(true);
     this.startBtn.disabled = true;
@@ -100,6 +109,7 @@ class ColorMemoryGame {
     this.level++;
     this.currentLevelEl.textContent = this.level.toString();
     this.playerIndex = 0;
+    this.roundPerfect = true;
 
     const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
     this.sequence.push(randomColor);
@@ -152,21 +162,79 @@ class ColorMemoryGame {
       await this.delay(200);
       button?.classList.remove('correct');
 
+      this.combo++;
+      this.updateComboDisplay();
+
       this.playerIndex++;
 
       if (this.playerIndex === this.sequence.length) {
-        this.showStatus('正确！准备下一关...', 'success');
+        const evaluation = this.getRoundEvaluation();
+        this.showStatus(`正确！${evaluation} 准备下一关...`, 'success');
+        this.showRoundEvaluation(evaluation);
         this.setButtonsDisabled(true);
-        await this.delay(1000);
+        await this.delay(1500);
         this.nextRound();
       }
     } else {
+      this.combo = 0;
+      this.roundPerfect = false;
+      this.updateComboDisplay();
+
       button?.classList.add('wrong');
       await this.delay(500);
       button?.classList.remove('wrong');
 
       this.gameOver();
     }
+  }
+
+  private updateComboDisplay(): void {
+    this.comboCountEl.textContent = this.combo.toString();
+    
+    if (this.combo >= 5) {
+      this.comboItemEl.classList.add('hot');
+    } else {
+      this.comboItemEl.classList.remove('hot');
+    }
+
+    if (this.combo > 0) {
+      this.comboItemEl.style.animation = 'none';
+      this.comboItemEl.offsetHeight;
+      this.comboItemEl.style.animation = '';
+    }
+  }
+
+  private getRoundEvaluation(): string {
+    if (!this.roundPerfect) {
+      return '';
+    }
+    
+    const combo = this.combo;
+    if (combo >= 20) {
+      return '🔥 超神！';
+    } else if (combo >= 15) {
+      return '⚡ 完美！';
+    } else if (combo >= 10) {
+      return '✨ 太棒了！';
+    } else if (combo >= 5) {
+      return '👍 不错！';
+    } else {
+      return '';
+    }
+  }
+
+  private showRoundEvaluation(evaluation: string): void {
+    if (!evaluation) return;
+
+    const gameBoard = document.querySelector('.game-board') as HTMLElement;
+    const evalEl = document.createElement('div');
+    evalEl.className = 'round-evaluation show';
+    evalEl.textContent = evaluation;
+    gameBoard.appendChild(evalEl);
+
+    setTimeout(() => {
+      evalEl.remove();
+    }, 1500);
   }
 
   private async gameOver(): Promise<void> {

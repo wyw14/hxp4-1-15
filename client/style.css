@@ -60,6 +60,47 @@ h1 {
   font-size: 2rem;
   font-weight: bold;
   color: #fff;
+  transition: all 0.3s ease;
+}
+
+.combo-item .score-value {
+  color: #feca57;
+}
+
+.combo-item.hot .score-value {
+  color: #ff6b6b;
+  animation: comboPulse 0.5s ease;
+}
+
+@keyframes comboPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.round-evaluation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: bold;
+  color: #feca57;
+  text-shadow: 0 0 20px rgba(254, 202, 87, 0.8);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.round-evaluation.show {
+  animation: evaluationPop 1.5s ease-out forwards;
+}
+
+@keyframes evaluationPop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  40% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
 }
 
 .game-status {
@@ -98,6 +139,7 @@ h1 {
   padding: 20px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 15px;
+  position: relative;
 }
 
 .color-btn {
