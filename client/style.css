@@ -103,6 +103,28 @@ h1 {
   100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
 }
 
+.round-evaluation.legendary {
+  font-size: 2.5rem;
+  color: #ff6b6b;
+  text-shadow: 0 0 30px rgba(255, 107, 107, 1), 0 0 60px rgba(254, 202, 87, 0.8);
+  animation: evaluationPopLegendary 1.8s ease-out forwards;
+}
+
+.round-evaluation.godlike {
+  font-size: 2.2rem;
+  color: #ff9ff3;
+  text-shadow: 0 0 25px rgba(255, 159, 243, 1), 0 0 50px rgba(255, 107, 107, 0.8);
+}
+
+@keyframes evaluationPopLegendary {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-10deg); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.4) rotate(5deg); }
+  40% { transform: translate(-50%, -50%) scale(1.1) rotate(-2deg); }
+  60% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -80%) scale(1.2); }
+}
+
 .game-status {
   font-size: 1.2rem;
   margin-bottom: 30px;

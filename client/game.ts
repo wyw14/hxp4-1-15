@@ -12,9 +12,11 @@ class ColorMemoryGame {
   private playerIndex: number = 0;
   private isPlaying: boolean = false;
   private isShowingSequence: boolean = false;
+  private isProcessingInput: boolean = false;
   private level: number = 0;
   private highScore: number = 0;
   private combo: number = 0;
+  private maxCombo: number = 0;
   private roundPerfect: boolean = true;
 
   private readonly buttons: NodeListOf<HTMLButtonElement>;
@@ -93,7 +95,9 @@ class ColorMemoryGame {
     this.playerIndex = 0;
     this.level = 0;
     this.combo = 0;
+    this.maxCombo = 0;
     this.isPlaying = true;
+    this.isProcessingInput = false;
     this.currentLevelEl.textContent = '0';
     this.comboCountEl.textContent = '0';
     this.comboItemEl.classList.remove('hot');
@@ -101,7 +105,7 @@ class ColorMemoryGame {
     this.setButtonsDisabled(true);
     this.startBtn.disabled = true;
     
-    this.showStatus('游戏开始！', 'playing');
+    this.showStatus('🎮 游戏开始！准备第 1 关', 'playing');
     this.nextRound();
   }
 
@@ -110,11 +114,12 @@ class ColorMemoryGame {
     this.currentLevelEl.textContent = this.level.toString();
     this.playerIndex = 0;
     this.roundPerfect = true;
+    this.isProcessingInput = false;
 
     const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
     this.sequence.push(randomColor);
 
-    this.showStatus(`第 ${this.level} 关 - 记住序列`, 'playing');
+    this.showStatus(`第 ${this.level} 关 - 共 ${this.sequence.length} 个按钮，请仔细观察`, 'playing');
     this.showSequence();
   }
 
@@ -125,6 +130,7 @@ class ColorMemoryGame {
     await this.delay(500);
 
     for (let i = 0; i < this.sequence.length; i++) {
+      this.showStatus(`演示中... ${i + 1} / ${this.sequence.length}`, 'playing');
       const color = this.sequence[i];
       await this.lightUpButton(color);
       
@@ -134,8 +140,9 @@ class ColorMemoryGame {
     }
 
     this.isShowingSequence = false;
+    this.isProcessingInput = false;
     this.setButtonsDisabled(false);
-    this.showStatus('请按顺序点击按钮', 'playing');
+    this.showStatus(`👆 轮到你了！请按顺序点击 ${this.sequence.length} 个按钮 (1/${this.sequence.length})`, 'playing');
   }
 
   private async lightUpButton(color: Color): Promise<void> {
@@ -152,7 +159,9 @@ class ColorMemoryGame {
   }
 
   private async handlePlayerInput(color: Color): Promise<void> {
-    if (!this.isPlaying || this.isShowingSequence) return;
+    if (!this.isPlaying || this.isShowingSequence || this.isProcessingInput) return;
+
+    this.isProcessingInput = true;
 
     const expectedColor = this.sequence[this.playerIndex];
     const button = this.getButtonByColor(color);
@@ -169,11 +178,14 @@ class ColorMemoryGame {
 
       if (this.playerIndex === this.sequence.length) {
         const evaluation = this.getRoundEvaluation();
-        this.showStatus(`正确！${evaluation} 准备下一关...`, 'success');
+        this.showStatus(`✅ 全对！${evaluation} 准备下一关...`, 'success');
         this.showRoundEvaluation(evaluation);
         this.setButtonsDisabled(true);
         await this.delay(1500);
         this.nextRound();
+      } else {
+        this.showStatus(`✓ 正确！继续 (${this.playerIndex + 1}/${this.sequence.length})`, 'playing');
+        this.isProcessingInput = false;
       }
     } else {
       this.combo = 0;
@@ -184,11 +196,16 @@ class ColorMemoryGame {
       await this.delay(500);
       button?.classList.remove('wrong');
 
+      this.isProcessingInput = false;
       this.gameOver();
     }
   }
 
   private updateComboDisplay(): void {
+    if (this.combo > this.maxCombo) {
+      this.maxCombo = this.combo;
+    }
+
     this.comboCountEl.textContent = this.combo.toString();
     
     if (this.combo >= 5) {
@@ -210,16 +227,22 @@ class ColorMemoryGame {
     }
     
     const combo = this.combo;
-    if (combo >= 20) {
-      return '🔥 超神！';
+    if (combo >= 30) {
+      return '🌟🌟🌟 传说！';
+    } else if (combo >= 20) {
+      return '🔥🔥 超神！';
     } else if (combo >= 15) {
-      return '⚡ 完美！';
+      return '💥 无敌！';
     } else if (combo >= 10) {
+      return '⚡ 完美！';
+    } else if (combo >= 7) {
       return '✨ 太棒了！';
     } else if (combo >= 5) {
+      return '🎯 精准！';
+    } else if (combo >= 3) {
       return '👍 不错！';
     } else {
-      return '';
+      return '✓ 通过';
     }
   }
 
@@ -229,21 +252,30 @@ class ColorMemoryGame {
     const gameBoard = document.querySelector('.game-board') as HTMLElement;
     const evalEl = document.createElement('div');
     evalEl.className = 'round-evaluation show';
+    
+    if (evaluation.includes('传说')) {
+      evalEl.classList.add('legendary');
+    } else if (evaluation.includes('超神')) {
+      evalEl.classList.add('godlike');
+    }
+    
     evalEl.textContent = evaluation;
     gameBoard.appendChild(evalEl);
 
+    const duration = evaluation.includes('传说') ? 1800 : 1500;
     setTimeout(() => {
       evalEl.remove();
-    }, 1500);
+    }, duration);
   }
 
   private async gameOver(): Promise<void> {
     this.isPlaying = false;
+    this.isProcessingInput = false;
     this.setButtonsDisabled(true);
     this.startBtn.disabled = false;
 
     const finalScore = this.level - 1;
-    this.showStatus(`游戏结束！你完成了 ${finalScore} 关`, 'gameover');
+    this.showStatus(`💥 游戏结束！完成 ${finalScore} 关，最高连击 ${this.maxCombo}`, 'gameover');
 
     if (finalScore > this.highScore) {
       await this.saveHighScore(finalScore);
